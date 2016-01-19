@@ -24,7 +24,7 @@ def stocGradAscent(X,Y,iter_num=100):
     for i in range(iter_num):
         data_index = range(m)
         for j in range(m):
-            alpha = 4.0/(i+j+1)+0.01
+            alpha = 4.0/(i+j+1)+0.01 # 在每次循环训练实例时不断减小alpha的值
             rand_index = np.random.randint(0,len(data_index))
             idx = data_index[rand_index]
             h = sigmoid(np.sum(X[idx]*thetas))

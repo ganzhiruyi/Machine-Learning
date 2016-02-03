@@ -241,7 +241,7 @@ def testRbf(X,Y,kTup):
     plt.show()
     plt.figure()
 
-X,Y = loadData('testSetRBF.txt')
+X,Y = loadData('data/testSetRBF.txt')
 # X,Y = loadData()
 # testLinearSvm(X, Y)
 # kernel = ('linear',10.0)

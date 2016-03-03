@@ -63,5 +63,72 @@ def createTree(dataSet, leafType=regLeaf, errType=regErr, ops=(1,4)):
     retTree['right'] = createTree(rson)
     return retTree
 
+def isTree(obj):
+    return (type(obj).__name__=='dict')
+
+def getMean(tree):
+    # 对树进行塌陷处理，合并叶子节点
+    if isTree(tree['left']):
+        tree['left'] = getMean(tree['left'])
+    if isTree(tree['right']):
+        tree['right'] = getMean(tree['right'])
+    return (tree['left'] + tree['right'])/2.0
+
+def prune(tree,testData):
+    # 利用测试数据对之前生成的树tree进行后剪枝
+    if testData.shape[0] == 0:
+        return getMean(tree) # 没有测试数据直接塌陷
+    if isTree(tree['left']) or isTree(tree['right']):
+        lSet,rSet = binSplitDataSet(testData, tree['spInd'], tree['spVal'])
+    if isTree(tree['left']):
+        tree['left'] = prune(tree['left'],lSet)
+    if isTree(tree['right']):
+        tree['right'] = prune(tree['right'],rSet)
+    if not isTree(tree['left']) and not isTree(tree['right']):
+        lSet,rSet = binSplitDataSet(testData, tree['spInd'], tree['spVal'])
+        errorNoMerge = sum(power(lSet[:,-1]-tree['left'],2)) + sum(power(rSet[:,-1]-tree['right'],2))
+        treeMean = (tree['left']+tree['right'])/2.0
+        errorMerge = sum(power(treeMean-testData[:,-1],2))
+        if errorMerge < errorNoMerge:
+            print 'merge'
+            return treeMean
+        else:
+            return tree
+    else:
+        return tree
+
+def linearSolve(dataSet):
+    m,n = dataSet.shape
+    X = mat(ones((m,n)))
+    Y = mat(ones((m,1)))
+    X[:,1:n] = dataSet[:,0:n-1]
+    Y = dataSet[:,-1]
+    xTx = X.T*X
+    if linalg.det(xTx) == 0.0:
+        raise NameError('This matrix is singular, try increasing the second value of ops')
+    ws = xTx.I*(X.T*Y)
+    return ws,X,Y
+
+def modelLeaf(dataSet):
+    ws,X,Y = linearSolve(dataSet)
+    return ws
+
+def modelErr(dataSet):
+    ws,X,Y = linearSolve(dataSet)
+    yPre = X*ws
+    return sum(power(Y-yPre,2))
+
+
+'''
 X = loadDataSet('data/9-2.txt')
-print createTree(X)
+tree = createTree(X)
+print tree
+print 'start prune....'
+testX = loadDataSet('data/9-2-test.txt')
+treeAfterPrune = prune(tree,testX)
+print treeAfterPrune
+'''
+X = loadDataSet('data/9-3.txt')
+print X
+tree = createTree(X, leafType=modelLeaf, errType=modelErr, ops=(1,10))
+print tree
